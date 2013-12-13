@@ -4,7 +4,7 @@ module Breaker
   CircuitOpenError = Class.new RuntimeError
 
   class Circuit
-    attr_accessor :failure_threshold
+    attr_accessor :failure_threshold, :retry_timeout
 
     def initialize(options = {})
       options.each_pair do |key, value|
@@ -13,6 +13,18 @@ module Breaker
 
       @state = :closed
       @failure_count = 0
+      @failed_at = nil
+    end
+
+    def open(clock = Time.now)
+      @failed_at = clock
+      @state = :open
+    end
+
+    def close
+      @failure_count = 0
+      @failed_at = nil
+      @state = :closed
     end
 
     def open?
@@ -23,23 +35,38 @@ module Breaker
       @state == :closed
     end
 
-    def run
-      raise CircuitOpenError if open?
+    def run(clock = Time.now)
+      raise CircuitOpenError if open? && !half_open?(clock)
 
       begin
-        yield
+        result = yield
+
+        if half_open?(clock)
+          close
+        end
+
+        result
       rescue => ex
-        failed
+        if closed?
+          failed clock
+        elsif half_open?(clock)
+          failed clock
+        end
+
         raise ex
       end
     end
 
     private
-    def failed
+    def half_open?(clock)
+      @failed_at && clock >= @failed_at + retry_timeout
+    end
+
+    def failed(clock)
       @failure_count = @failure_count + 1
 
       if @failure_count >= @failure_threshold
-        @state = :open
+        open clock
       end
     end
   end
