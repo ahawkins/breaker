@@ -28,7 +28,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_success_in_half_open_state_moves_breaker_into_closed
-    clock, service = Time.now, mock
+    clock = Time.now
 
     breaker = Breaker::Circuit.new failure_threshold: 2, retry_timeout: 15
     breaker.open clock
