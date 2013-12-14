@@ -3,8 +3,16 @@ require_relative 'test_helper'
 class AcceptanceTest < MiniTest::Unit::TestCase
   DummyError = Class.new RuntimeError
 
+  InMemoryStore = Struct.new :state, :failure_count, :retry_threshold
+
+  attr_reader :store
+
+  def setup
+    @store = InMemoryStore.new :closed, 0, nil
+  end
+
   def test_has_sensible_defaults
-    breaker = Breaker::Circuit.new
+    breaker = Breaker::Circuit.new store
 
     assert_equal 60, breaker.retry_timeout
     assert_equal 10, breaker.failure_threshold
@@ -12,7 +20,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_goes_into_open_state_when_failure_threshold_reached
-    breaker = Breaker::Circuit.new failure_threshold: 1, retry_timeout: 30
+    breaker = Breaker::Circuit.new store, failure_threshold: 1, retry_timeout: 30
     assert breaker.closed?
 
     assert_raises DummyError do
@@ -32,7 +40,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   def test_success_in_half_open_state_moves_breaker_into_closed
     clock = Time.now
 
-    breaker = Breaker::Circuit.new failure_threshold: 2, retry_timeout: 15
+    breaker = Breaker::Circuit.new store, failure_threshold: 2, retry_timeout: 15
     breaker.open clock
     assert breaker.open?
 
@@ -52,7 +60,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   def test_failures_in_half_open_state_push_retry_timeout_back
     clock = Time.now
 
-    breaker = Breaker::Circuit.new failure_threshold: 2, retry_timeout: 15
+    breaker = Breaker::Circuit.new store, failure_threshold: 2, retry_timeout: 15
     breaker.open clock
     assert breaker.open?
 
@@ -76,7 +84,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_counts_timeouts_as_trips
-    breaker = Breaker::Circuit.new failure_threshold: 2, retry_timeout: 15, timeout: 0.01
+    breaker = Breaker::Circuit.new store, timeout: 0.01
     assert breaker.closed?
 
     assert_raises TimeoutError do
