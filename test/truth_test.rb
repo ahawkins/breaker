@@ -16,7 +16,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
     assert breaker.open?
     assert_raises Breaker::CircuitOpenError do
       breaker.run do
-        1 + 1
+        assert false, "Block should not run in this state"
       end
     end
   end
