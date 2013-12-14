@@ -12,6 +12,10 @@ module Breaker
         send "#{key}=", value
       end
 
+      self.retry_timeout ||= 60
+      self.failure_threshold ||= 10
+      self.timeout ||= 5
+
       @state = :closed
       @failure_count = 0
       @retry_threshold = nil

@@ -3,6 +3,14 @@ require_relative 'test_helper'
 class AcceptanceTest < MiniTest::Unit::TestCase
   DummyError = Class.new RuntimeError
 
+  def test_has_sensible_defaults
+    breaker = Breaker::Circuit.new
+
+    assert_equal 60, breaker.retry_timeout
+    assert_equal 10, breaker.failure_threshold
+    assert_equal 5, breaker.timeout
+  end
+
   def test_goes_into_open_state_when_failure_threshold_reached
     breaker = Breaker::Circuit.new failure_threshold: 1, retry_timeout: 30
     assert breaker.closed?
