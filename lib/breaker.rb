@@ -13,17 +13,18 @@ module Breaker
 
       @state = :closed
       @failure_count = 0
-      @failed_at = nil
+      @retry_threshold = nil
     end
 
     def open(clock = Time.now)
-      @failed_at = clock
+      @failure_count = 1
+      @retry_threshold = clock + retry_timeout
       @state = :open
     end
 
     def close
       @failure_count = 0
-      @failed_at = nil
+      @retry_threshold = nil
       @state = :closed
     end
 
@@ -36,38 +37,35 @@ module Breaker
     end
 
     def run(clock = Time.now)
-      raise CircuitOpenError if open? && !half_open?(clock)
+      if closed? || half_open?(clock)
+        begin
+          result = yield
 
-      begin
-        result = yield
+          if half_open?(clock)
+            close
+          end
 
-        if half_open?(clock)
-          close
+          result
+        rescue => ex
+          @failure_count = @failure_count + 1
+          @retry_threshold = clock + retry_timeout
+
+          open clock
+
+          raise ex
         end
-
-        result
-      rescue => ex
-        if closed?
-          failed clock
-        elsif half_open?(clock)
-          failed clock
-        end
-
-        raise ex
+      else
+        raise Breaker::CircuitOpenError
       end
     end
 
     private
-    def half_open?(clock)
-      @failed_at && clock >= @failed_at + retry_timeout
+    def tripped?
+      @failure_count != 0
     end
 
-    def failed(clock)
-      @failure_count = @failure_count + 1
-
-      if @failure_count >= @failure_threshold
-        open clock
-      end
+    def half_open?(clock)
+      tripped? && clock >= @retry_threshold
     end
   end
 end
