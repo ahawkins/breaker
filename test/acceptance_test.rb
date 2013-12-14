@@ -6,10 +6,62 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   InMemoryFuse = Struct.new :state, :failure_count, :retry_threshold,
     :failure_threshold, :retry_timeout, :timeout
 
+  class InMemoryRepo
+    attr_reader :store
+
+    def initialize
+      @store = []
+    end
+
+    def upsert(attributes)
+      existing = named attributes.fetch(:name)
+      if existing
+        update existing, attributes
+      else
+        create attributes
+      end
+    end
+
+    def count
+      store.length
+    end
+
+    def first
+      store.first
+    end
+
+    def named(name)
+      store.find { |fuse| fuse.name == name }
+    end
+
+    def create(attributes)
+      fuse = Breaker::Fuse.new
+
+      attributes.each_pair do |key, value|
+        fuse.send "#{key}=", value
+      end
+
+      store << fuse
+
+      fuse
+    end
+
+    def update(existing, attributes)
+      existing
+
+      attributes.each_pair do |key, value|
+        existing.send "#{key}=", value
+      end
+
+      existing
+    end
+  end
+
   attr_reader :fuse
 
   def setup
     @fuse = InMemoryFuse.new :closed, 0, nil, 3, 15, 10
+    Breaker.repo = InMemoryRepo.new
   end
 
   def test_goes_into_open_state_when_failure_threshold_reached
@@ -96,5 +148,40 @@ class AcceptanceTest < MiniTest::Unit::TestCase
         sleep circuit.timeout * 2
       end
     end
+  end
+
+  def test_circuit_factory_persists_fuses
+    circuit = Breaker.circuit 'test'
+
+    assert_equal 1, Breaker.repo.count
+    fuse = Breaker.repo.first
+
+    assert_equal 'test', fuse.name
+  end
+
+  def test_circuit_factory_creates_new_fuses_with_sensible_defaults
+    circuit = Breaker.circuit 'test'
+
+    assert_equal 1, Breaker.repo.count
+    fuse = Breaker.repo.first
+
+    assert_equal 10, fuse.failure_threshold
+    assert_equal 60, fuse.retry_timeout
+    assert_equal 5, fuse.timeout
+  end
+
+  def test_circuit_factory_updates_existing_fuses
+    Breaker.circuit 'test'
+    assert_equal 1, Breaker.repo.count
+
+    Breaker.circuit 'test', failure_threshold: 1,
+      retry_timeout: 2, timeout: 3
+
+    assert_equal 1, Breaker.repo.count
+    fuse = Breaker.repo.first
+
+    assert_equal 1, fuse.failure_threshold
+    assert_equal 2, fuse.retry_timeout
+    assert_equal 3, fuse.timeout
   end
 end

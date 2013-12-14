@@ -12,6 +12,27 @@ module Breaker
     :failure_count,
     :retry_threshold
 
+  class << self
+    def circuit(name, options = {})
+      fuse = repo.upsert({
+        name: name,
+        failure_threshold: options.fetch(:failure_threshold, 10),
+        retry_timeout: options.fetch(:retry_timeout, 60),
+        timeout: options.fetch(:timeout, 5)
+      })
+
+      Circuit.new fuse
+    end
+
+    def repo
+      @repo
+    end
+
+    def repo=(repo)
+      @repo = repo
+    end
+  end
+
   class Circuit
     attr_accessor :fuse
 
