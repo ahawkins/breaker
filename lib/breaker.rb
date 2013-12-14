@@ -4,6 +4,14 @@ require 'timeout'
 module Breaker
   CircuitOpenError = Class.new RuntimeError
 
+  Fuse = Struct.new :name,
+    :state,
+    :failure_threshold,
+    :retry_timeout,
+    :timeout,
+    :failure_count,
+    :retry_threshold
+
   class Circuit
     attr_accessor :fuse
 
