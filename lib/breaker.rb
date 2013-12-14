@@ -1,10 +1,11 @@
 require "breaker/version"
+require 'timeout'
 
 module Breaker
   CircuitOpenError = Class.new RuntimeError
 
   class Circuit
-    attr_accessor :failure_threshold, :retry_timeout
+    attr_accessor :failure_threshold, :retry_timeout, :timeout
 
     def initialize(options = {})
       options.each_pair do |key, value|
@@ -39,7 +40,9 @@ module Breaker
     def run(clock = Time.now)
       if closed? || half_open?(clock)
         begin
-          result = yield
+          result = Timeout.timeout timeout do
+            yield
+          end
 
           if half_open?(clock)
             close

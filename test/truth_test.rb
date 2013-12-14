@@ -66,4 +66,15 @@ class AcceptanceTest < MiniTest::Unit::TestCase
       end
     end
   end
+
+  def test_counts_timeouts_as_trips
+    breaker = Breaker::Circuit.new failure_threshold: 2, retry_timeout: 15, timeout: 0.01
+    assert breaker.closed?
+
+    assert_raises TimeoutError do
+      breaker.run do
+        sleep breaker.timeout * 2
+      end
+    end
+  end
 end
