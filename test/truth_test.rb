@@ -66,13 +66,4 @@ class AcceptanceTest < MiniTest::Unit::TestCase
       end
     end
   end
-
-  private
-  def assert_nothing_raised
-    begin
-      yield
-    rescue => ex
-      raise "Expected no errors, but #{ex} was raised"
-    end
-  end
 end
