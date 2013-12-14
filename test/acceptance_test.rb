@@ -3,20 +3,20 @@ require_relative 'test_helper'
 class AcceptanceTest < MiniTest::Unit::TestCase
   DummyError = Class.new RuntimeError
 
-  InMemoryStore = Struct.new :state, :failure_count, :retry_threshold,
+  InMemoryFuse = Struct.new :state, :failure_count, :retry_threshold,
     :failure_threshold, :retry_timeout, :timeout
 
-  attr_reader :store
+  attr_reader :fuse
 
   def setup
-    @store = InMemoryStore.new :closed, 0, nil, 3, 15, 10
+    @fuse = InMemoryFuse.new :closed, 0, nil, 3, 15, 10
   end
 
   def test_goes_into_open_state_when_failure_threshold_reached
-    store.failure_threshold = 1
-    store.retry_timeout = 30
+    fuse.failure_threshold = 1
+    fuse.retry_timeout = 30
 
-    circuit = Breaker::Circuit.new store
+    circuit = Breaker::Circuit.new fuse
     assert circuit.closed?
 
     assert_raises DummyError do
@@ -34,12 +34,12 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_success_in_half_open_state_moves_circuit_into_closed
-    store.failure_threshold = 2
-    store.retry_timeout = 15
+    fuse.failure_threshold = 2
+    fuse.retry_timeout = 15
 
     clock = Time.now
 
-    circuit = Breaker::Circuit.new store
+    circuit = Breaker::Circuit.new fuse
     circuit.open clock
     assert circuit.open?
 
@@ -57,12 +57,12 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_failures_in_half_open_state_push_retry_timeout_back
-    store.failure_threshold = 2
-    store.retry_timeout = 15
+    fuse.failure_threshold = 2
+    fuse.retry_timeout = 15
 
     clock = Time.now
 
-    circuit = Breaker::Circuit.new store, failure_threshold: 2, retry_timeout: 15
+    circuit = Breaker::Circuit.new fuse, failure_threshold: 2, retry_timeout: 15
     circuit.open clock
     assert circuit.open?
 
@@ -86,9 +86,9 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   end
 
   def test_counts_timeouts_as_trips
-    store.timeout = 0.01
+    fuse.timeout = 0.01
 
-    circuit = Breaker::Circuit.new store
+    circuit = Breaker::Circuit.new fuse
     assert circuit.closed?
 
     assert_raises TimeoutError do

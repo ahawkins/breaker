@@ -5,38 +5,38 @@ module Breaker
   CircuitOpenError = Class.new RuntimeError
 
   class Circuit
-    attr_accessor :store
+    attr_accessor :fuse
 
-    def initialize(store, options = {})
-      @store = store
+    def initialize(fuse, options = {})
+      @fuse = fuse
     end
 
     def open(clock = Time.now)
-      store.failure_count = 1
-      store.state = :open
-      store.retry_threshold = clock + retry_timeout
+      fuse.failure_count = 1
+      fuse.state = :open
+      fuse.retry_threshold = clock + retry_timeout
     end
 
     def close
-      store.failure_count = 0
-      store.state = :closed
-      store.retry_threshold = nil
+      fuse.failure_count = 0
+      fuse.state = :closed
+      fuse.retry_threshold = nil
     end
 
     def open?
-      store.state == :open
+      fuse.state == :open
     end
 
     def closed?
-      store.state == :closed
+      fuse.state == :closed
     end
 
     def retry_timeout
-      store.retry_timeout
+      fuse.retry_timeout
     end
 
     def timeout
-      store.timeout
+      fuse.timeout
     end
 
     def run(clock = Time.now)
@@ -52,8 +52,8 @@ module Breaker
 
           result
         rescue => ex
-          store.failure_count = store.failure_count + 1
-          store.retry_threshold = clock + retry_timeout
+          fuse.failure_count = fuse.failure_count + 1
+          fuse.retry_threshold = clock + retry_timeout
 
           open clock
 
@@ -66,11 +66,11 @@ module Breaker
 
     private
     def tripped?
-      store.failure_count != 0
+      fuse.failure_count != 0
     end
 
     def half_open?(clock)
-      tripped? && clock >= store.retry_threshold
+      tripped? && clock >= fuse.retry_threshold
     end
   end
 end
