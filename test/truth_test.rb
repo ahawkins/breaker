@@ -34,7 +34,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
       end
     end
 
-    breaker.run clock + 15 do
+    breaker.run clock + breaker.retry_timeout do
       # do nothing, this works and flips the breaker back closed
     end
 
