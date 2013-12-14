@@ -16,44 +16,44 @@ class AcceptanceTest < MiniTest::Unit::TestCase
     store.failure_threshold = 1
     store.retry_timeout = 30
 
-    breaker = Breaker::Circuit.new store
-    assert breaker.closed?
+    circuit = Breaker::Circuit.new store
+    assert circuit.closed?
 
     assert_raises DummyError do
-      breaker.run do
+      circuit.run do
         raise DummyError
       end
     end
 
-    assert breaker.open?
+    assert circuit.open?
     assert_raises Breaker::CircuitOpenError do
-      breaker.run do
+      circuit.run do
         assert false, "Block should not run in this state"
       end
     end
   end
 
-  def test_success_in_half_open_state_moves_breaker_into_closed
+  def test_success_in_half_open_state_moves_circuit_into_closed
     store.failure_threshold = 2
     store.retry_timeout = 15
 
     clock = Time.now
 
-    breaker = Breaker::Circuit.new store
-    breaker.open clock
-    assert breaker.open?
+    circuit = Breaker::Circuit.new store
+    circuit.open clock
+    assert circuit.open?
 
     assert_raises Breaker::CircuitOpenError do
-      breaker.run clock do
+      circuit.run clock do
          # nothing
       end
     end
 
-    breaker.run clock + breaker.retry_timeout do
-      # do nothing, this works and flips the breaker back closed
+    circuit.run clock + circuit.retry_timeout do
+      # do nothing, this works and flips the circuit back closed
     end
 
-    assert breaker.closed?
+    assert circuit.closed?
   end
 
   def test_failures_in_half_open_state_push_retry_timeout_back
@@ -62,24 +62,24 @@ class AcceptanceTest < MiniTest::Unit::TestCase
 
     clock = Time.now
 
-    breaker = Breaker::Circuit.new store, failure_threshold: 2, retry_timeout: 15
-    breaker.open clock
-    assert breaker.open?
+    circuit = Breaker::Circuit.new store, failure_threshold: 2, retry_timeout: 15
+    circuit.open clock
+    assert circuit.open?
 
     assert_raises DummyError do
-      breaker.run clock + breaker.retry_timeout do
+      circuit.run clock + circuit.retry_timeout do
         raise DummyError
       end
     end
 
     assert_raises Breaker::CircuitOpenError do
-      breaker.run clock + breaker.retry_timeout do
+      circuit.run clock + circuit.retry_timeout do
         assert false, "Block should not be run while in this state"
       end
     end
 
     assert_raises DummyError do
-      breaker.run clock + breaker.retry_timeout * 2 do
+      circuit.run clock + circuit.retry_timeout * 2 do
         raise DummyError
       end
     end
@@ -88,12 +88,12 @@ class AcceptanceTest < MiniTest::Unit::TestCase
   def test_counts_timeouts_as_trips
     store.timeout = 0.01
 
-    breaker = Breaker::Circuit.new store
-    assert breaker.closed?
+    circuit = Breaker::Circuit.new store
+    assert circuit.closed?
 
     assert_raises TimeoutError do
-      breaker.run do
-        sleep breaker.timeout * 2
+      circuit.run do
+        sleep circuit.timeout * 2
       end
     end
   end
