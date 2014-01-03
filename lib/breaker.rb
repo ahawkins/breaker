@@ -103,3 +103,5 @@ module Breaker
     end
   end
 end
+
+require_relative 'breaker/in_memory_repo'
