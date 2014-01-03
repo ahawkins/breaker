@@ -63,10 +63,12 @@ module Breaker
     def open?
       fuse.state == :open
     end
+    alias down? open?
 
     def closed?
       fuse.state == :closed
     end
+    alias up? closed?
 
     def retry_timeout
       fuse.retry_timeout
