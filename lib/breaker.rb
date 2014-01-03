@@ -4,13 +4,13 @@ require 'timeout'
 module Breaker
   CircuitOpenError = Class.new RuntimeError
 
-  Fuse = Struct.new :name,
-    :state,
-    :failure_threshold,
-    :retry_timeout,
-    :timeout,
-    :failure_count,
-    :retry_threshold
+  Fuse = Struct.new :name, :state, :failure_threshold, :retry_timeout, :timeout, :failure_count, :retry_threshold do
+    def initialize(*args)
+      super
+      self.state = :closed if state.nil?
+      self.failure_count = 0 if failure_count.nil?
+    end
+  end
 
   class << self
     def circuit(name, options = {})
@@ -21,7 +21,15 @@ module Breaker
         timeout: options.fetch(:timeout, 5)
       })
 
-      Circuit.new fuse
+      circuit = Circuit.new fuse
+
+      if block_given?
+        circuit.run do
+          yield
+        end
+      end
+
+      circuit
     end
 
     def repo

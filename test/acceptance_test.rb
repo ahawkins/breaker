@@ -133,4 +133,12 @@ class AcceptanceTest < MiniTest::Unit::TestCase
     assert_equal 2, fuse.retry_timeout
     assert_equal 3, fuse.timeout
   end
+
+  def test_circuit_breaker_factory_can_run_code_through_the_circuit
+    assert_raises DummyError do
+      Breaker.circuit 'test' do
+        raise DummyError
+      end
+    end
+  end
 end
