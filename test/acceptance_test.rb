@@ -141,4 +141,13 @@ class AcceptanceTest < MiniTest::Unit::TestCase
       end
     end
   end
+
+  def test_breaker_has_a_closed_query_method
+    circuit = Breaker.circuit 'test'
+    circuit.close
+    assert Breaker.closed?('test')
+
+    circuit.open
+    assert Breaker.open?('test')
+  end
 end

@@ -32,6 +32,14 @@ module Breaker
       circuit
     end
 
+    def closed?(name)
+      circuit(name).closed?
+    end
+
+    def open?(name)
+      circuit(name).open?
+    end
+
     def repo
       @repo
     end
