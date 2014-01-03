@@ -35,10 +35,12 @@ module Breaker
     def closed?(name)
       circuit(name).closed?
     end
+    alias up? closed?
 
     def open?(name)
       circuit(name).open?
     end
+    alias down? open?
 
     def repo
       @repo
