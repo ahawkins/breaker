@@ -125,3 +125,5 @@ module Breaker
 end
 
 require_relative 'breaker/in_memory_repo'
+
+Breaker.repo = Breaker::InMemoryRepo.new

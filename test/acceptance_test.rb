@@ -10,7 +10,6 @@ class AcceptanceTest < MiniTest::Unit::TestCase
 
   def setup
     @fuse = InMemoryFuse.new :closed, 0, nil, 3, 15, 10
-    Breaker.repo = Breaker::InMemoryRepo.new
   end
 
   def test_goes_into_open_state_when_failure_threshold_reached
