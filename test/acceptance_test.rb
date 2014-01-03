@@ -147,9 +147,13 @@ class AcceptanceTest < MiniTest::Unit::TestCase
     circuit.close
     assert Breaker.closed?('test')
     assert Breaker.up?('test')
+    refute Breaker.open?('test')
+    refute Breaker.down?('test')
 
     circuit.open
     assert Breaker.open?('test')
     assert Breaker.down?('test')
+    refute Breaker.closed?('test')
+    refute Breaker.up?('test')
   end
 end
