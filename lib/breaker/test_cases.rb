@@ -10,6 +10,10 @@ module Breaker
       flunk "Test must define a repo to use"
     end
 
+    def fuse_name
+      'test'
+    end
+
     def setup
       Breaker.repo = repo
     end
@@ -88,6 +92,7 @@ module Breaker
     end
 
     def test_counts_timeouts_as_trips
+      fuse.retry_timeout = 15
       fuse.timeout = 0.01
 
       circuit = Breaker::Circuit.new fuse
@@ -101,16 +106,16 @@ module Breaker
     end
 
     def test_circuit_factory_persists_fuses
-      circuit = Breaker.circuit 'test'
+      circuit = Breaker.circuit fuse_name
 
       assert_equal 1, Breaker.repo.count
       fuse = Breaker.repo.first
 
-      assert_equal 'test', fuse.name
+      assert_equal fuse_name, fuse.name
     end
 
     def test_circuit_factory_creates_new_fuses_with_sensible_defaults
-      circuit = Breaker.circuit 'test'
+      circuit = Breaker.circuit fuse_name
 
       assert_equal 1, Breaker.repo.count
       fuse = Breaker.repo.first
@@ -121,10 +126,10 @@ module Breaker
     end
 
     def test_circuit_factory_updates_existing_fuses
-      Breaker.circuit 'test'
+      Breaker.circuit fuse_name
       assert_equal 1, Breaker.repo.count
 
-      Breaker.circuit 'test', failure_threshold: 1,
+      Breaker.circuit fuse_name, failure_threshold: 1,
         retry_timeout: 2, timeout: 3
 
       assert_equal 1, Breaker.repo.count
@@ -137,25 +142,27 @@ module Breaker
 
     def test_circuit_breaker_factory_can_run_code_through_the_circuit
       assert_raises DummyError do
-        Breaker.circuit 'test' do
+        Breaker.circuit fuse_name do
           raise DummyError
         end
       end
     end
 
-    def test_breaker_has_a_closed_query_method
-      circuit = Breaker.circuit 'test'
+    def test_breaker_query_methods
+      circuit = Breaker.circuit fuse_name
       circuit.close
-      assert Breaker.closed?('test')
-      assert Breaker.up?('test')
-      refute Breaker.open?('test')
-      refute Breaker.down?('test')
+
+      assert Breaker.closed?(fuse_name)
+      assert Breaker.up?(fuse_name)
+      refute Breaker.open?(fuse_name)
+      refute Breaker.down?(fuse_name)
 
       circuit.open
-      assert Breaker.open?('test')
-      assert Breaker.down?('test')
-      refute Breaker.closed?('test')
-      refute Breaker.up?('test')
+
+      assert Breaker.open?(fuse_name)
+      assert Breaker.down?(fuse_name)
+      refute Breaker.closed?(fuse_name)
+      refute Breaker.up?(fuse_name)
     end
   end
 end
