@@ -45,6 +45,10 @@ module Breaker
       @fuse = fuse
     end
 
+    def name
+      fuse.name
+    end
+
     def open(clock = Time.now)
       fuse.failure_count = 1
       fuse.state = :open
