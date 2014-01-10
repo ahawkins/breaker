@@ -41,7 +41,7 @@ module Breaker
   class Circuit
     attr_accessor :fuse
 
-    def initialize(fuse, options = {})
+    def initialize(fuse)
       @fuse = fuse
     end
 
