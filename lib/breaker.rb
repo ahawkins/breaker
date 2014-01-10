@@ -4,14 +4,6 @@ require 'timeout'
 module Breaker
   CircuitOpenError = Class.new RuntimeError
 
-  Fuse = Struct.new :name, :state, :failure_threshold, :retry_timeout, :timeout, :failure_count, :retry_threshold do
-    def initialize(*args)
-      super
-      self.state = :closed if state.nil?
-      self.failure_count = 0 if failure_count.nil?
-    end
-  end
-
   class << self
     def circuit(name, options = {})
       fuse = repo.upsert({
@@ -70,6 +62,10 @@ module Breaker
       fuse.retry_threshold = nil
     end
 
+    def ==(other)
+      other.instance_of?(self.class) && fuse == other.fuse
+    end
+
     def open?
       fuse.state == :open
     end
@@ -82,6 +78,14 @@ module Breaker
 
     def retry_timeout
       fuse.retry_timeout
+    end
+
+    def failure_count
+      fuse.failure_count
+    end
+
+    def failure_threshold
+      fuse.failure_threshold
     end
 
     def timeout

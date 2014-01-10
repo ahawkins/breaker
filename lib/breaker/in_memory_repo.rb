@@ -1,5 +1,17 @@
 module Breaker
   class InMemoryRepo
+    Fuse = Struct.new :name, :state, :failure_threshold, :retry_timeout, :timeout, :failure_count, :retry_threshold do
+      def initialize(*args)
+        super
+        self.state = :closed if state.nil?
+        self.failure_count = 0 if failure_count.nil?
+      end
+
+      def ==(other)
+        other.instance_of?(self.class) && name == other.name
+      end
+    end
+
     attr_reader :store
 
     def initialize
@@ -28,7 +40,7 @@ module Breaker
     end
 
     def create(attributes)
-      fuse = Breaker::Fuse.new
+      fuse = Fuse.new
 
       attributes.each_pair do |key, value|
         fuse.send "#{key}=", value
