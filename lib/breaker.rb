@@ -6,12 +6,7 @@ module Breaker
 
   class << self
     def circuit(name, options = {})
-      fuse = repo.upsert({
-        name: name,
-        failure_threshold: options.fetch(:failure_threshold, 10),
-        retry_timeout: options.fetch(:retry_timeout, 60),
-        timeout: options.fetch(:timeout, 5)
-      })
+      fuse = repo.upsert options.merge(name: name)
 
       circuit = Circuit.new fuse
 

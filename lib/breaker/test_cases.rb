@@ -111,9 +111,9 @@ module Breaker
       assert_equal 1, Breaker.repo.count
       fuse = Breaker.repo.first
 
-      assert_equal 10, fuse.failure_threshold
-      assert_equal 60, fuse.retry_timeout
-      assert_equal 5, fuse.timeout
+      assert_equal 10, fuse.failure_threshold, "Failure Theshold should have a default"
+      assert_equal 60, fuse.retry_timeout, "Retry timeout should have a default"
+      assert_equal 5, fuse.timeout, "Timeout should have a default"
     end
 
     def test_circuit_factory_updates_existing_fuses
