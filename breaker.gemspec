@@ -7,10 +7,10 @@ Gem::Specification.new do |spec|
   spec.name          = "breaker"
   spec.version       = Breaker::VERSION
   spec.authors       = ["ahawkins"]
-  spec.email         = ["me@broadcastingadam.com"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.email         = ["adam@hawkins.io"]
+  spec.description   = %q{Circuit breaker pattern for well designed Ruby applications }
+  spec.summary       = %q{}
+  spec.homepage      = "https://github.com/ahawkins/breaker"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)
