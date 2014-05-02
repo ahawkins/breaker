@@ -10,7 +10,7 @@ class AcceptanceTest < MiniTest::Unit::TestCase
 
   def setup
     @repo = Breaker::InMemoryRepo.new
-    @fuse = InMemoryFuse.new :closed, 0, nil, 3, 15, 10
+    @fuse = InMemoryFuse.new :closed, 0, 1, 3, 15, 10
     super
   end
 end

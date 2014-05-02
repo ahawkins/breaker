@@ -50,7 +50,6 @@ module Breaker
     end
 
     def open(clock = Time.now)
-      fuse.failure_count = 1
       fuse.state = :open
       fuse.retry_threshold = clock + retry_timeout
     end
@@ -105,9 +104,8 @@ module Breaker
           result
         rescue => ex
           fuse.failure_count = fuse.failure_count + 1
-          fuse.retry_threshold = clock + retry_timeout
 
-          open clock
+          open clock if tripped?
 
           raise ex
         end
@@ -118,7 +116,7 @@ module Breaker
 
     private
     def tripped?
-      fuse.failure_count != 0
+      fuse.failure_count > fuse.failure_threshold
     end
 
     def half_open?(clock)

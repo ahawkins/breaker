@@ -18,9 +18,20 @@ module Breaker
     end
 
     def test_goes_into_open_state_when_failure_threshold_reached
-      circuit = Breaker.circuit 'test', failure_threshold: 1, retry_timeout: 30
+      circuit = Breaker.circuit 'test', failure_threshold: 5, retry_timeout: 30
 
       assert circuit.closed?
+
+      circuit.failure_threshold.times do
+        begin
+          circuit.run do
+            raise DummyError
+          end
+        rescue DummyError ; end
+      end
+
+      assert_equal circuit.failure_count, circuit.failure_threshold
+      refute circuit.open?
 
       assert_raises DummyError do
         circuit.run do
@@ -29,6 +40,7 @@ module Breaker
       end
 
       assert circuit.open?
+
       assert_raises Breaker::CircuitOpenError do
         circuit.run do
           assert false, "Block should not run in this state"
@@ -40,12 +52,19 @@ module Breaker
       clock = Time.now
       circuit = Breaker.circuit 'test', failure_threshold: 2, retry_timeout: 15
 
-      circuit.open clock
+      (circuit.failure_threshold + 1).times do
+        begin
+          circuit.run clock do
+            raise DummyError
+          end
+        rescue DummyError ; end
+      end
+
       assert circuit.open?
 
       assert_raises Breaker::CircuitOpenError do
         circuit.run clock do
-           # nothing
+          # nothing
         end
       end
 
@@ -58,9 +77,16 @@ module Breaker
 
     def test_failures_in_half_open_state_push_retry_timeout_back
       clock = Time.now
-      circuit = Breaker.circuit 'test', failure_threshold: 2, retry_timeout: 15
+      circuit = Breaker.circuit 'test', failure_threshold: 1, retry_timeout: 15
 
-      circuit.open clock
+      (circuit.failure_threshold + 1).times do
+        begin
+          circuit.run clock do
+            raise DummyError
+          end
+        rescue DummyError ; end
+      end
+
       assert circuit.open?
 
       assert_raises DummyError do
