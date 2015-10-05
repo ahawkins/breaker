@@ -26,14 +26,14 @@ larger system from failures in other systems. They are especially
 useful for protecting an application from finnicky remote systems.
 
 The circuit is a state machine. It has three states: open, closed, and
-half-open. The circuit starts off in `open` state--normal operation.
+half-open. The circuit starts off in `closed` state--normal operation.
 If the operation failures N times (the failure threshold) the circuit
-moves to `closed`. Calls in the `closed` state will immediate fail and
-raise an exception. After a specified time period has passed (retry
+moves to `open`. Calls in the `open` state fail immediately with an
+an exception. After a specified time period has passed (retry
 timeout) the circuit moves into `half-open`. Calls happen normally. If
 a call fails the state moves to `open`. If the call suceeds it moves
-to `open`. All calls are capped with a timeout. If a timeout occurs
-that counts as a failure.
+to `closed`. All calls are capped with a timeout. If a timeouts count
+as failures.
 
 ## Usage
 
